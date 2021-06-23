@@ -5,7 +5,8 @@ import {
 import Loader from 'App/src/components/loader/Loader';
 import NetworkOps from 'App/src/network/Network';
 import Songs from 'App/src/models/Songs';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storeItem } from 'App/src/utility/Utility';
+import { COLOR_CODES } from 'App/src/utility/Theme';
 
 export default class Home extends Component {
 
@@ -14,7 +15,8 @@ export default class Home extends Component {
         this.props = props;
         this.state = {
             loading: false,
-            songsList: []
+            songsList: [],
+            refreshing: false
         }
     }
 
@@ -22,15 +24,7 @@ export default class Home extends Component {
         this.fetchSongsList()
     }
     
-    storeData = async (value) => {
-        console.log('Store Data',value)
-        try {
-          await AsyncStorage.setItem('DETAILS', value)
-        } catch (e) {
-          // saving error
-        }
-      }
-
+  
     async fetchSongsList(){
         this.setState({ loading: true })
         const _results = []
@@ -48,35 +42,40 @@ export default class Home extends Component {
 
     renderSeparator = () => {
         return(
-            <View
-                style={{
-                    height:1,
-                    width: "94%",
-                    backgroundColor: "#CED0CE",
-                    marginLeft: "2%"
-                }}
-            />
+            <View style={styles.separatorContainer}/>
         );
     };
 
     renderFooter = () => {
         if(!this.state.loading) return null;
         return(
-            <View
-                style={{
-                    paddingVertical: 1,
-                    borderTopWidth: 1,
-                    borderColor: "#CED0CE"
-                }}
-                >
+            <View style={styles.footerContainer}>
                 <ActivityIndicator animating size="large" />
             </View>
     );
     }
 
     async navigateDetails(item){
-        await this.storeData(JSON.stringify(item));
+        await storeItem('DETAILS',JSON.stringify(item));
         this.props.navigation.navigate('details')
+    }
+
+    handleRefresh = () => {
+        this.fetchSongsList()
+     }
+
+    _renderItem(item){
+        return (
+                <TouchableOpacity key={item.description} style={styles.renderItemContainer} onPress={()=> this.navigateDetails(item)}>
+                        <View>
+                            <Image source={{ uri: item.artworkUrl100}} style={{ height: 100, width: 100 }}/>
+                        </View>
+                        <View style={{ marginLeft: 20 }}>
+                            <Text>{item.collectionName}</Text>
+                            <Text style={{ marginTop: 15 }}>{item.artistName}</Text>
+                        </View>
+                </TouchableOpacity>
+        )
     }
 
     render(){
@@ -85,20 +84,12 @@ export default class Home extends Component {
                 <Loader loading={this.state.loading} />
                 <FlatList
                     data= {this.state.songsList}
-                    renderItem={({ item })=> <TouchableOpacity key={item.description} style={{ flexDirection: 'row', marginVertical: 10, marginHorizontal: 10  }} onPress={()=> this.navigateDetails(item)}>
-                        <View>
-                            <Image source={{ uri: item.artworkUrl100}} style={{ height: 100, width: 100 }}/>
-                        </View>
-                        <View style={{ marginLeft: 20 }}>
-                            <Text>{item.collectionName}</Text>
-                            <Text style={{ marginTop: 15 }}>{item.artistName}</Text>
-                        </View>
-                        </TouchableOpacity>}
+                    renderItem={({ item })=> this._renderItem(item)}
                     keyExtractor={(item, index) => index.toString()}
                     ItemSeparatorComponent= {this.renderSeparator}
                     ListFooterComponent = {this.renderFooter}
-                    // refreshing={this.state.refreshing}
-                    // onRefresh={this.handleRefresh}
+                    refreshing={this.state.refreshing}
+                    onRefresh={this.handleRefresh}
                 />
             </View>
         )
@@ -108,6 +99,22 @@ export default class Home extends Component {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFF'
+        backgroundColor: COLOR_CODES.WHITE
+    },
+    renderItemContainer: {
+        flexDirection: 'row', 
+        marginVertical: 10, 
+        marginHorizontal: 10
+    },
+    footerContainer: {
+        paddingVertical: 1,
+        borderTopWidth: 1,
+        borderColor: COLOR_CODES.GRAY_SCALE
+    },
+    separatorContainer: {
+        height:1,
+        width: "94%",
+        backgroundColor: COLOR_CODES.GRAY_SCALE,
+        marginLeft: "2%"
     }
 })

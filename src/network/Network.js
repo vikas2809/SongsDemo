@@ -15,8 +15,6 @@ export class Network {
   async wrapperWithOptions(url:string, request:any) {
     console.log('request',request);
     try {
-    //   const isInternetConnected = await AsyncStore.get('isConnected');
-    //   if(isInternetConnected !== null && isInternetConnected == 'true') {
         const response = await fetch(url, request);
         console.log('response:',response)
         if(!response.ok) {
@@ -33,10 +31,6 @@ export class Network {
           console.log('.text ',res)
           return JSON.parse(res);
         }
-    //   }
-    //   else{
-    //     alert('No Internet Connection')
-    //   }
     }
     catch (error) {
       console.log('Error', error);

@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import HOME_SCREEN from 'App/src/screens/Home';
 import SONGSDETAILS_SCREEN from 'App/src/screens/SongsDetail';
+import { COLOR_CODES } from 'App/src/utility/Theme';
 
 const Stack = createStackNavigator();
 
@@ -12,9 +13,9 @@ function AppNavigator() {
       <NavigationContainer>
         <Stack.Navigator  screenOptions={{
         headerStyle: {
-          backgroundColor: '#2A81C7',
+          backgroundColor: COLOR_CODES.HEADER_COLOR,
         },
-        headerTintColor: '#fff',
+        headerTintColor: COLOR_CODES.WHITE,
         headerTitleAlign: 'center',
         headerTitleStyle: {
           alignSelf: 'center'

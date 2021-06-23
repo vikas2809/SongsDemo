@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
 import {
-    View, Text, Image, Dimensions, ScrollView
+    View, Text, Image, Dimensions, ScrollView, StyleSheet
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import HTML from "react-native-render-html";
+import { COLOR_CODES } from 'App/src/utility/Theme';
+import { getItem, readabledate, currencySymbol } from 'App/src/utility/Utility';
 
+const contentWidth = Dimensions.get('window').width;
 export default class SongsDetail extends Component {
+
     constructor(props) {
         super(props);
         this.props = props;
@@ -13,74 +16,85 @@ export default class SongsDetail extends Component {
             songDetails: {}
         }
     }
+
     async componentDidMount() {
-        console.log('SongsDetails get data', await this.getData())
+        const _data = await getItem('DETAILS')
+        this.setState({
+            songDetails: JSON.parse(_data)
+        })
     }
 
-
-    getData = async () => {
-        try {
-            const value = await AsyncStorage.getItem('DETAILS')
-            if (value !== null) {
-                console.log('Value from get data', value)
-                this.setState({
-                    songDetails: JSON.parse(value)
-                })
-            }
-        } catch (e) {
-            // error reading value
-        }
-    }
 
     renderSeparator = () => {
-        return(
-            <View
-                style={{
-                    height:1,
-                    width: "94%",
-                    backgroundColor: "#CED0CE",
-                    marginLeft: "2%"
-                }}
-            />
+        return (
+            <View style={styles.separatorContainer} />
         );
     };
 
-    readabledate(date){
-        
-        let dateString = new Date(date).toUTCString();
-        dateString = dateString.split(' ').slice(0, 4).join(' ');
-        return dateString;
+
+
+    _renderItem(item){
+        switch(item.type){
+            case 'image': return <Image source={{ uri: item.data }} style={item.style} />
+            case 'text': return <Text style={item.style}>{item.data}</Text>
+            case 'separator': return this.renderSeparator()
+            case 'releaseInfo': return this._renderReleaseInfo()
+            case 'html' :  return item.data && <HTML source={{ html: item.data }} contentWidth={contentWidth} containerStyle={item.style} />
+        }
     }
 
-    currencySymbol(currency){
-        switch(currency){
-            case 'USD' : return '\u0024';
-        }
+    _renderReleaseInfo(){
+        const { songDetails } = this.state;
+        return (
+            <View style={styles.releaseInfo}>
+                <Text style={{ fontSize: 18 }}>{readabledate(songDetails.releaseDate)}</Text>
+                <Text style={{ fontSize: 18 }}>{songDetails.country}</Text>
+            </View>
+        )
     }
 
     render() {
         const { songDetails } = this.state;
-        const contentWidth = Dimensions.get('window').width;
+        
+        const _renderData = [
+            {data: songDetails.artworkUrl100, style: {marginBottom: 5, aspectRatio: 3 / 2}, type: 'image'},
+            {data: songDetails.artistName, style: {marginLeft: 20, fontSize: 20, color: COLOR_CODES.HEADER_COLOR}, type: 'text'},
+            {type: 'separator'},
+            {data: songDetails.collectionName, style: {marginLeft: 20, marginBottom: 10, fontSize: 12, marginVertical: 10}, type: 'text'},
+            {type: 'separator'},
+            {data: songDetails.genre, style: {marginLeft: 20, marginVertical: 5, fontSize: 18}, type: 'text'},
+            {type: 'separator'},
+            {type: 'releaseInfo'},
+            {type: 'separator'},
+            {data: currencySymbol(songDetails.currency)+songDetails.collectionPrice, style: {marginLeft: 20, marginVertical: 5, fontSize: 18}, type: 'text'},
+            {type: 'separator'},
+            {data: songDetails.description, style: {marginHorizontal: 20, marginTop: 10},type: 'html' },
+            {type: 'separator'},
+            {data: songDetails.copyright, style: {marginLeft: 20, textAlign: 'center'}, type: 'text'}
+
+        ]
         return (
-            <ScrollView style={{ flex: 1, marginBottom: 20  }}>
-                <Image source={{ uri: songDetails.artworkUrl100 }} style={{ marginBottom: 5, aspectRatio: 3/2 }} />
-                <Text style={{ marginLeft: 20, fontSize: 20, color: '#2A81C7' }}>{songDetails.artistName}</Text>
-                {this.renderSeparator()}
-                <Text style={{ marginLeft: 20, marginBottom: 10, fontSize: 12, marginVertical: 10  }}>{songDetails.collectionName}</Text>
-                {this.renderSeparator()}
-                <Text style={{ marginLeft: 20, marginVertical: 5, fontSize: 18  }}>{songDetails.genre}</Text>
-                {this.renderSeparator()}
-                <View style={{ justifyContent: 'space-between', flexDirection: 'row', marginHorizontal: 20 }}>
-                    <Text style={{ fontSize: 18 }}>{this.readabledate(songDetails.releaseDate)}</Text>
-                    <Text style={{ fontSize: 18 }}>{songDetails.country}</Text>
-                </View>
-                {this.renderSeparator()}
-                <Text style={{ marginLeft: 20, marginVertical: 5, fontSize: 18  }}>{this.currencySymbol(songDetails.currency)}{songDetails.collectionPrice}</Text>
-                {this.renderSeparator()}
-                {songDetails.description && <HTML source={{ html: songDetails.description }} contentWidth={contentWidth} containerStyle={{ marginHorizontal: 20, marginTop: 10 }} />}
-                {this.renderSeparator()}
-                <Text style={{ marginLeft: 20, textAlign: 'center' }}>{songDetails.copyright}</Text>
+            <ScrollView style={{ flex: 1, marginBottom: 20 }}>
+                {_renderData.map(item => this._renderItem(item))}
             </ScrollView>
         )
     }
 }
+
+const styles = StyleSheet.create({
+    releaseInfo:{
+        justifyContent: 'space-between', 
+        flexDirection: 'row', 
+        marginHorizontal: 20
+    },
+    textStyle: {
+        marginLeft: 20, 
+        textAlign: 'center'
+    },
+    separatorContainer: {
+        height:1,
+        width: "94%",
+        backgroundColor: COLOR_CODES.GRAY_SCALE,
+        marginLeft: "2%"
+    }
+})
